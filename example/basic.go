@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"io/fs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,18 +22,21 @@ func main() {
 
 	if *prod {
 		gin.SetMode(gin.ReleaseMode)
-		templates = manager.New(Assets, manager.Cache())
+		root, _ := fs.Sub(&Assets, "assets")
+		templates = manager.New(root, manager.Cache())
 	} else {
-		templates = manager.NewFromDir(".")
+		templates = manager.NewFromDir("assets")
 	}
-	templates.Add("index", "assets/pages/index.html", "assets/layouts/base.html")
+	templates.Register("index.html", "base.html")
 
 	router := gin.Default()
 	router.HTMLRender = templates
 
 	router.GET("/", func(gctx *gin.Context) {
-		gctx.HTML(http.StatusOK, "index", "")
+		gctx.HTML(http.StatusOK, "index.html", "")
 	})
+	// alternative
+	router.GET("/hello", templates.View(nil, "hello.html", "base.html"))
 
 	_ = router.Run(*bind)
 }

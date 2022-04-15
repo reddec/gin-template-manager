@@ -18,6 +18,10 @@ Check [example](example) directory.
 * Opt: filesystem: `templates := mananger.NewFromDir("path-to-dir")`
 * Opt: assets (embedded): `templates := mananger.New(assets)`
 
+**Register views**
+
+* `templates.Register("index.html", "base.html", "child.html")`
+
 **Link to Gin router**
 
 * `router.HTMLRender = templates`
@@ -31,7 +35,8 @@ Check [example](example) directory.
 ```go
 templates := mananger.NewFromDir("path-to-dir")
 templates.Add("hello", "hello.html", "layouts/base.html")
-
+// in case your assets are following convention you may use
+// templates.Register("hello.html", "base.html")
 router := gin.Default()
 router.HTMLRender = templates
 
@@ -40,3 +45,10 @@ router.GET("/", func(gctx *gin.Context) {
 })
 // ...
 ```
+
+## Convention
+
+Directory structure
+
+* `pages` - contains views
+* `layouts` - contains layouts for pages
