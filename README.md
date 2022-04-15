@@ -34,14 +34,15 @@ Check [example](example) directory.
 
 ```go
 templates := mananger.NewFromDir("path-to-dir")
-templates.Add("hello", "hello.html", "layouts/base.html")
-// in case your assets are following convention you may use
-// templates.Register("hello.html", "base.html")
+templates.Register("hello.html", "base.html")
+// in case your assets are NOT following convention you may use
+// templates.Add("hello", "hello.html", "layouts/base.html")
+
 router := gin.Default()
 router.HTMLRender = templates
 
 router.GET("/", func(gctx *gin.Context) {
-    gctx.HTML(http.StatusOK, "hello", "params")
+    gctx.HTML(http.StatusOK, "hello.html", "params")
 })
 // ...
 ```
