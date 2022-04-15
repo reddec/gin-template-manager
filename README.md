@@ -9,6 +9,8 @@ Features:
 - Streaming
 - Supports embedded assets
 
+Check [example](example) directory.
+
 ## Usage
 
 **Initialize manager**
