@@ -17,7 +17,7 @@ func New(fs fs.FS, options ...Option) *Manager {
 	mgr := &Manager{
 		fs:        fs,
 		templates: make(map[string][]string),
-		stream:    false,
+		funcMap:   make(template.FuncMap),
 	}
 	for _, opt := range options {
 		opt(mgr)
@@ -108,10 +108,7 @@ func (mgr *Manager) Instance(name string, params interface{}) render.Render {
 
 func (mgr *Manager) compile(name string) (*template.Template, error) {
 	files := mgr.templates[name]
-	templ := template.New("")
-	if mgr.funcMap != nil {
-		templ = templ.Funcs(mgr.funcMap)
-	}
+	templ := template.New("").Funcs(mgr.funcMap)
 
 	for _, file := range files {
 		content, err := fs.ReadFile(mgr.fs, file)

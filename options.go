@@ -29,9 +29,6 @@ func FuncMap(functions template.FuncMap) Option {
 // Func adds templates functions to internal map.
 func Func(name string, fn interface{}) Option {
 	return func(mgr *Manager) {
-		if mgr.funcMap == nil {
-			mgr.funcMap = make(template.FuncMap)
-		}
 		mgr.funcMap[name] = fn
 	}
 }
