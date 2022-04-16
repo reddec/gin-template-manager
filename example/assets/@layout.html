@@ -1,6 +1,34 @@
 <html>
-<title>{{block "title" .}}{{end}}</title>
+<head>
+    <title>{{block "title" .}}{{end}}</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+</head>
 <body>
-{{block "body" .}}{{end}}
+<div style="padding: 1em">
+    <nav>
+        <ul>
+            <li><strong>Demo</strong></li>
+        </ul>
+        <ul>
+
+            <li>
+                <a class='{{if eq .Path "/"}}secondary{{end}}' href='{{.Rel "/"}}'>Home</a>
+            </li>
+            <li>
+                <a class='{{if eq .Path "/hello"}}secondary{{end}}' href='{{.Rel "/hello"}}'>Hello</a>
+            </li>
+            <li>
+                <a class='{{if .In "/features"}}secondary{{end}}' href='{{.Rel "/features/"}}'>Features</a>
+            </li>
+        </ul>
+        <ul>
+        </ul>
+    </nav>
+</div>
+<main class="container">
+    {{block "body" .}}{{end}}
+</main>
+
+
 </body>
 </html>

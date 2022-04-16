@@ -1,0 +1,29 @@
+{{define "body"}}
+<h2>Links</h2>
+<p>
+    Check URL and links
+</p>
+<table>
+    <thead>
+    <tr>
+        <th>Absolute URL</th>
+        <th>Relative URL</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>/</td>
+        <td>{{.Rel "/"}}</td>
+    </tr>
+    <tr>
+        <td>/abc</td>
+        <td>{{.Rel "/abc"}}</td>
+    </tr>
+    <tr>
+        <td>/abc/xyz</td>
+        <td>{{.Rel "/abc/xyz"}}</td>
+    </tr>
+    </tbody>
+</table>
+{{block "feature" .}}{{end}}
+{{end}}
