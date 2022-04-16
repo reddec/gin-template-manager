@@ -36,7 +36,8 @@ func (vc *ViewContext) Data() interface{} {
 }
 
 // Rel constructs relative path from absolute.
-func (vc *ViewContext) Rel(href string) string {
+func (vc *ViewContext) Rel(href string, paths ...string) string {
+	href = path.Clean(path.Join(append([]string{href}, paths...)...))
 	u, err := url.Parse(href)
 	if err != nil || u.IsAbs() || !strings.HasPrefix(href, "/") {
 		return href
