@@ -7,11 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	pagesDir   = "pages"
-	layoutsDir = "layouts"
-)
-
 // View uses Register to create template and creates Gin Handler.
 // Data from callback (optional) will be passed as view param.
 func (mgr *Manager) View(handler func(ctx context.Context) (interface{}, error), pageTemplate string) gin.HandlerFunc {

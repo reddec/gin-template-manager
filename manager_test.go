@@ -178,3 +178,18 @@ func TestFuncMap(t *testing.T) {
 
 	assert.Contains(t, text, "<title>a1b2c3</title>")
 }
+
+func TestManager_Alias(t *testing.T) {
+	mgr := mananger.New(os.DirFS("test-data"), mananger.Cache())
+	mgr.Alias("alice", "hello.html")
+
+	tpl, err := mgr.Get("alice")
+	require.NoError(t, err)
+	require.NotNil(t, tpl)
+
+	other, err := mgr.Get("hello.html")
+	require.NoError(t, err)
+	require.NotNil(t, tpl)
+
+	require.Equal(t, tpl, other)
+}
