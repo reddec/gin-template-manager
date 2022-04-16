@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io/fs"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/reddec/gin-template-manager"
@@ -25,9 +26,8 @@ func main() {
 		root, _ := fs.Sub(&Assets, "assets")
 		templates = manager.New(root, manager.Cache())
 	} else {
-		templates = manager.NewFromDir("assets")
+		templates = manager.New(os.DirFS("assets"))
 	}
-	templates.Register("index.html", "base.html")
 
 	router := gin.Default()
 	router.HTMLRender = templates
@@ -36,7 +36,7 @@ func main() {
 		gctx.HTML(http.StatusOK, "index.html", "")
 	})
 	// alternative
-	router.GET("/hello", templates.View(nil, "hello.html", "base.html"))
+	router.GET("/hello", templates.View(nil, "hello.html"))
 
 	_ = router.Run(*bind)
 }

@@ -19,10 +19,8 @@ import (
 )
 
 func TestManager_basic(t *testing.T) {
-	mgr := mananger.NewFromDir("test-data")
-	mgr.Add("hello", "hello.html", "layouts/base.html")
-
-	tpl, err := mgr.Get("hello")
+	mgr := mananger.New(os.DirFS("test-data"))
+	tpl, err := mgr.Get("hello.html")
 	require.NoError(t, err)
 	var buffer bytes.Buffer
 	err = tpl.Execute(&buffer, "xyz")
@@ -35,10 +33,9 @@ func TestManager_basic(t *testing.T) {
 }
 
 func TestManager_nestedLayouts(t *testing.T) {
-	mgr := mananger.NewFromDir("test-data")
-	mgr.Add("hello", "nested.html", "layouts/base.html", "layouts/child.html")
+	mgr := mananger.New(os.DirFS("test-data"))
 
-	tpl, err := mgr.Get("hello")
+	tpl, err := mgr.Get("sub/nested.html")
 	require.NoError(t, err)
 	var buffer bytes.Buffer
 	err = tpl.Execute(&buffer, "xyz")
@@ -52,14 +49,12 @@ func TestManager_nestedLayouts(t *testing.T) {
 }
 
 func TestManager_integration(t *testing.T) {
-	templates := mananger.NewFromDir("test-data")
-	templates.Add("hello", "hello.html", "layouts/base.html")
-
+	templates := mananger.New(os.DirFS(("test-data")))
 	router := gin.Default()
 	router.HTMLRender = templates
 
 	router.GET("/", func(gctx *gin.Context) {
-		gctx.HTML(http.StatusOK, "hello", "qwerty")
+		gctx.HTML(http.StatusOK, "hello.html", "qwerty")
 	})
 
 	rec := httptest.NewRecorder()
@@ -79,17 +74,15 @@ func TestCache(t *testing.T) {
 	err = ioutil.WriteFile(templateFile, []byte("hello world"), 0755)
 	require.NoError(t, err)
 
-	templates := mananger.NewFromDir(workDir, mananger.Cache())
-	templates.Add("hello", "index.html")
-	nonCached := mananger.NewFromDir(workDir)
-	nonCached.Add("hello", "index.html")
+	templates := mananger.New(os.DirFS(workDir), mananger.Cache())
+	nonCached := mananger.New(os.DirFS(workDir))
 
 	// works before
-	tpl, err := templates.Get("hello")
+	tpl, err := templates.Get("index.html")
 	require.NoError(t, err)
 	require.NotNil(t, tpl)
 
-	tpl, err = nonCached.Get("hello")
+	tpl, err = nonCached.Get("index.html")
 	require.NoError(t, err)
 	require.NotNil(t, tpl)
 
@@ -97,11 +90,11 @@ func TestCache(t *testing.T) {
 	err = os.RemoveAll(templateFile)
 	require.NoError(t, err)
 
-	tpl, err = templates.Get("hello")
+	tpl, err = templates.Get("index.html")
 	require.NoError(t, err)
 	require.NotNil(t, tpl)
 
-	tpl, err = nonCached.Get("hello")
+	tpl, err = nonCached.Get("index.html")
 	require.Error(t, err)
 	require.Nil(t, tpl)
 }
@@ -115,8 +108,7 @@ func TestManager_Compile(t *testing.T) {
 	err = ioutil.WriteFile(templateFile, []byte("hello world"), 0755)
 	require.NoError(t, err)
 
-	templates := mananger.NewFromDir(workDir, mananger.Cache())
-	templates.Add("hello", "index.html")
+	templates := mananger.New(os.DirFS(workDir), mananger.Cache())
 
 	err = templates.Compile()
 	require.NoError(t, err)
@@ -124,24 +116,22 @@ func TestManager_Compile(t *testing.T) {
 	err = os.RemoveAll(templateFile)
 	require.NoError(t, err)
 
-	tpl, err := templates.Get("hello")
+	tpl, err := templates.Get("index.html")
 	require.NoError(t, err)
 	require.NotNil(t, tpl)
 }
 
 func TestWithoutStream(t *testing.T) {
-	templates := mananger.NewFromDir("test-data",
+	templates := mananger.New(os.DirFS("test-data"),
 		mananger.Func("doFunc", func() (string, error) {
 			return "", fmt.Errorf("oops")
 		}),
 	)
-	templates.Add("func", "func.html", "layouts/base.html")
-
 	router := gin.Default()
 	router.HTMLRender = templates
 
 	router.GET("/", func(gctx *gin.Context) {
-		gctx.HTML(http.StatusOK, "func", "qwerty")
+		gctx.HTML(http.StatusOK, "func.html", "qwerty")
 	})
 
 	rec := httptest.NewRecorder()
@@ -152,19 +142,18 @@ func TestWithoutStream(t *testing.T) {
 }
 
 func TestStream(t *testing.T) {
-	templates := mananger.NewFromDir("test-data",
+	templates := mananger.New(os.DirFS("test-data"),
 		mananger.Stream(),
 		mananger.Func("doFunc", func() (string, error) {
 			return "", fmt.Errorf("oops")
 		}),
 	)
-	templates.Add("func", "func.html", "layouts/base.html")
 
 	router := gin.Default()
 	router.HTMLRender = templates
 
 	router.GET("/", func(gctx *gin.Context) {
-		gctx.HTML(http.StatusOK, "func", "qwerty")
+		gctx.HTML(http.StatusOK, "func.html", "qwerty")
 	})
 
 	rec := httptest.NewRecorder()
@@ -175,12 +164,11 @@ func TestStream(t *testing.T) {
 }
 
 func TestFuncMap(t *testing.T) {
-	mgr := mananger.NewFromDir("test-data", mananger.FuncMap(template.FuncMap{
+	mgr := mananger.New(os.DirFS("test-data"), mananger.FuncMap(template.FuncMap{
 		"doFunc": func() string { return "a1b2c3" },
 	}))
-	mgr.Add("func", "func.html", "layouts/base.html")
 
-	tpl, err := mgr.Get("func")
+	tpl, err := mgr.Get("func.html")
 	require.NoError(t, err)
 	var buffer bytes.Buffer
 	err = tpl.Execute(&buffer, "xyz")

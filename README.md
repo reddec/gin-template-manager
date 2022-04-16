@@ -11,16 +11,14 @@ Features:
 
 Check [example](example) directory.
 
+**STATUS:** proof-of-concept
+
 ## Usage
 
 **Initialize manager**
 
-* Opt: filesystem: `templates := mananger.NewFromDir("path-to-dir")`
+* Opt: filesystem: `templates := mananger.New(os.DirFS("path-to-dir"))`
 * Opt: assets (embedded): `templates := mananger.New(assets)`
-
-**Register views**
-
-* `templates.Register("index.html", "base.html", "child.html")`
 
 **Link to Gin router**
 
@@ -28,21 +26,18 @@ Check [example](example) directory.
 
 **Render**
 
-* `gctx.HTML(http.StatusOK, "hello", "params")`
+* `gctx.HTML(http.StatusOK, "index.html", "params")`
 
 ### Example
 
 ```go
-templates := mananger.NewFromDir("path-to-dir")
-templates.Register("hello.html", "base.html")
-// in case your assets are NOT following convention you may use
-// templates.Add("hello", "hello.html", "layouts/base.html")
+templates := mananger.New(os.DirFS("path-to-dir"))
 
 router := gin.Default()
 router.HTMLRender = templates
 
 router.GET("/", func(gctx *gin.Context) {
-    gctx.HTML(http.StatusOK, "hello.html", "params")
+    gctx.HTML(http.StatusOK, "index.html", "params")
 })
 // ...
 ```
@@ -51,5 +46,4 @@ router.GET("/", func(gctx *gin.Context) {
 
 Directory structure
 
-* `pages` - contains views
-* `layouts` - contains layouts for pages
+* `@layout.html` - layout file

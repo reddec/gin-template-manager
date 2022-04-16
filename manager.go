@@ -2,22 +2,25 @@ package manager
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
-	"os"
+	"path"
 	"sync"
 
 	"github.com/gin-gonic/gin/render"
 )
 
+const LayoutFile = "@layout.html"
+
 // New template manager which supports layouts and can be used as template engine for Gin.
 func New(fs fs.FS, options ...Option) *Manager {
 	mgr := &Manager{
-		fs:        fs,
-		templates: make(map[string][]string),
-		funcMap:   make(template.FuncMap),
+		fs:      fs,
+		alias:   make(map[string]string),
+		funcMap: make(template.FuncMap),
 	}
 	for _, opt := range options {
 		opt(mgr)
@@ -25,35 +28,32 @@ func New(fs fs.FS, options ...Option) *Manager {
 	return mgr
 }
 
-// NewFromDir creates new template manager based on filesystem directory.
-func NewFromDir(dir string, options ...Option) *Manager {
-	return New(os.DirFS(dir), options...)
-}
-
 // Manager of templates. Supports caching (builds template once), streaming (render directly to client),
 // and functions map (ex: Sprig).
 type Manager struct {
-	fs        fs.FS
-	templates map[string][]string
-	stream    bool
-	funcMap   template.FuncMap
-	cache     struct {
+	fs      fs.FS
+	alias   map[string]string
+	stream  bool
+	funcMap template.FuncMap
+	cache   struct {
 		enable    bool
 		templates sync.Map // map[string]*cachedTemplate
 	}
 }
 
-// Add template as from template file (related to FS used during creation) and optional layouts.
-// Configuration will be saved under provided name. Template will be lazy-compiled. See Compile
-// for earlier warm-up. Thread UNSAFE, since templates are usually supposed to be added once during the initialization
+// Alias template file (related to FS used during creation) and to short name.
+// Thread UNSAFE, since templates are usually supposed to be added once during the initialization
 // phase.
-func (mgr *Manager) Add(name string, templateFile string, layouts ...string) {
-	mgr.templates[name] = append(layouts, templateFile)
+func (mgr *Manager) Alias(aliasName, templateFile string) {
+	mgr.alias[aliasName] = templateFile
 }
 
-// Get and parse template (optionally from cache) by the same name as used in Add.
+// Get and parse template (optionally from cache) by the template name or alias.
 // If cache enabled, template will be compiled only once. Thread-safe.
 func (mgr *Manager) Get(name string) (*template.Template, error) {
+	if realName, ok := mgr.alias[name]; ok {
+		name = realName
+	}
 	if !mgr.cache.enable {
 		return mgr.compile(name)
 	}
@@ -85,12 +85,16 @@ func (mgr *Manager) Get(name string) (*template.Template, error) {
 
 // Compile all templates. There is no sense to use it without enabled caching. Could be used as warm-up.
 func (mgr *Manager) Compile() error {
-	for name := range mgr.templates {
-		if _, err := mgr.Get(name); err != nil {
-			return fmt.Errorf("compile %s: %w", name, err)
+	return fs.WalkDir(mgr.fs, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-	}
-	return nil
+		if d.IsDir() || d.Name() == LayoutFile {
+			return nil
+		}
+		_, err = mgr.Get(path)
+		return err
+	})
 }
 
 // Instance of Gin renderer, used by Gin itself.
@@ -107,21 +111,42 @@ func (mgr *Manager) Instance(name string, params interface{}) render.Render {
 }
 
 func (mgr *Manager) compile(name string) (*template.Template, error) {
-	files := mgr.templates[name]
-	templ := template.New("").Funcs(mgr.funcMap)
-
-	for _, file := range files {
-		content, err := fs.ReadFile(mgr.fs, file)
-		if err != nil {
-			return nil, fmt.Errorf("read %s: %w", file, err)
-		}
-		t, err := templ.Parse(string(content))
-		if err != nil {
-			return nil, fmt.Errorf("parse %s: %w", file, err)
-		}
-		templ = t
+	root, err := mgr.layout(path.Dir(name), template.New("").Funcs(mgr.funcMap))
+	if err != nil {
+		return nil, fmt.Errorf("layouts form %s: %w", name, err)
 	}
-	return templ, nil
+
+	content, err := fs.ReadFile(mgr.fs, name)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", name, err)
+	}
+	return root.Parse(string(content))
+}
+
+func (mgr *Manager) layout(name string, root *template.Template) (*template.Template, error) {
+	parent := path.Dir(name)
+	if !(name == "" || name == "/" || name == ".") {
+		top, err := mgr.layout(parent, root)
+		if err != nil {
+			return nil, fmt.Errorf("get parent layout %s: %w", parent, err)
+		}
+		root = top
+	}
+
+	layoutFile := path.Join(name, LayoutFile)
+	content, err := fs.ReadFile(mgr.fs, layoutFile)
+	if errors.Is(err, fs.ErrNotExist) {
+		return root, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read layout %s: %w", layoutFile, err)
+	}
+	t, err := root.Parse(string(content))
+	if err != nil {
+		return nil, fmt.Errorf("parse %s: %w", layoutFile, err)
+	}
+
+	return t, nil
 }
 
 type renderer struct {
