@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"net/url"
 	"path"
 	"strings"
@@ -36,19 +37,23 @@ func (vc *ViewContext) Data() interface{} {
 }
 
 // Rel constructs relative path from absolute.
-func (vc *ViewContext) Rel(href string, paths ...string) string {
-	href = path.Clean(path.Join(append([]string{href}, paths...)...))
-	u, err := url.Parse(href)
-	if err != nil || u.IsAbs() || !strings.HasPrefix(href, "/") {
-		return href
+func (vc *ViewContext) Rel(values ...interface{}) string {
+	var paths = make([]string, 0, len(values))
+	for _, v := range values {
+		paths = append(paths, fmt.Sprint(v))
 	}
-
+	href := path.Clean("/" + path.Join(paths...))
 	return path.Clean("./" + vc.rootPath + href)
 }
 
-// RelArgs constructs relative path from absolute and povidided path parts.
+// RelArgs constructs relative path from absolute and provided path parts.
 func (vc *ViewContext) RelArgs(href string, paths []string) string {
-	return vc.Rel(href, paths...)
+	var args = make([]interface{}, 0, 1+len(paths))
+	args = append(args, href)
+	for _, p := range paths {
+		args = append(args, p)
+	}
+	return vc.Rel(args...)
 }
 
 // In checks is current path equal or under provided href.
