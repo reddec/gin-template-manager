@@ -73,3 +73,14 @@ func rootPath(path string) string {
 	}
 	return strings.Join(res, "/")
 }
+
+// Rel constructs relative path for provided absolute path.
+func Rel(gctx *gin.Context, paths ...string) string {
+	href := path.Clean(path.Join(paths...))
+	u, err := url.Parse(href)
+	if err != nil || u.IsAbs() || !strings.HasPrefix(href, "/") {
+		return href
+	}
+
+	return path.Clean("./" + rootPath(gctx.Request.URL.Path) + href)
+}
