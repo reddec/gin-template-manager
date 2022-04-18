@@ -46,6 +46,11 @@ func (vc *ViewContext) Rel(href string, paths ...string) string {
 	return path.Clean("./" + vc.rootPath + href)
 }
 
+// RelArgs constructs relative path from absolute and povidided path parts.
+func (vc *ViewContext) RelArgs(href string, paths []string) string {
+	return vc.Rel(href, paths...)
+}
+
 // In checks is current path equal or under provided href.
 func (vc *ViewContext) In(href string) bool {
 	return href == vc.gctx.Request.URL.Path || strings.HasPrefix(vc.gctx.Request.URL.Path, path.Clean(href))
