@@ -25,5 +25,28 @@
     </tr>
     </tbody>
 </table>
+<h2>Named routes</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Relative URL</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>home</td>
+        <td>{{.Ref "home"}}</td>
+    </tr>
+    <tr>
+        <td>features</td>
+        <td>{{.Ref "features"}}</td>
+    </tr>
+    <tr>
+        <td>feature(links)</td>
+        <td>{{.Ref "feature" "links"}}</td>
+    </tr>
+    </tbody>
+</table>
 {{block "feature" .}}{{end}}
 {{end}}

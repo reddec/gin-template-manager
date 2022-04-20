@@ -193,3 +193,26 @@ func TestManager_Alias(t *testing.T) {
 
 	require.Equal(t, tpl, other)
 }
+
+func TestLinks_Path(t *testing.T) {
+	templates := mananger.New(os.DirFS(("test-data")))
+	router := gin.Default()
+	router.HTMLRender = templates
+
+	links := mananger.NewLinks(router)
+
+	router.GET("/", func(gctx *gin.Context) {
+		gctx.HTML(http.StatusOK, "links.html", mananger.View(gctx, 4567))
+	})
+
+	router.GET(links.Named("eventByID", "/event/:id"), func(gctx *gin.Context) {
+		gctx.HTML(http.StatusOK, "hello.html", 1)
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), `<a href='event/4567'>Event 4567</a>`)
+}

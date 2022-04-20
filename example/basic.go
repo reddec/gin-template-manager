@@ -4,6 +4,7 @@ import (
 	"embed"
 	"flag"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -26,24 +27,28 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 		root, _ := fs.Sub(&Assets, "assets")
 		templates = manager.New(root, manager.Cache())
+		if err := templates.Compile(); err != nil {
+			log.Panic(err)
+		}
 	} else {
 		templates = manager.New(os.DirFS("assets"))
 	}
 
 	router := gin.Default()
 	router.HTMLRender = templates
+	links := manager.NewLinks(router)
 
-	router.GET("/", func(gctx *gin.Context) {
+	router.GET(links.Named("home", "/"), func(gctx *gin.Context) {
 		gctx.HTML(http.StatusOK, "index.html", manager.View(gctx, nil))
 	})
 
-	router.GET("/hello", func(gctx *gin.Context) {
+	router.GET(links.Named("hello", "/hello"), func(gctx *gin.Context) {
 		gctx.HTML(http.StatusOK, "hello.html", manager.View(gctx, nil))
 	})
-	router.GET("/features", func(gctx *gin.Context) {
+	router.GET(links.Named("features", "/features"), func(gctx *gin.Context) {
 		gctx.HTML(http.StatusOK, "features/index.html", manager.View(gctx, nil))
 	})
-	router.GET("/features/:feature", func(gctx *gin.Context) {
+	router.GET(links.Named("feature", "/features/:feature"), func(gctx *gin.Context) {
 		feature := path.Base(path.Clean(gctx.Param("feature")))
 		gctx.HTML(http.StatusOK, "features/"+feature+".html", manager.View(gctx, nil))
 	})

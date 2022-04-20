@@ -12,13 +12,13 @@
         <ul>
 
             <li>
-                <a class='{{if eq .Path "/"}}secondary{{end}}' href='{{.Rel "/"}}'>Home</a>
+                <a class='{{if eq .Path "/"}}secondary{{end}}' href='{{.Ref "home"}}'>Home</a>
             </li>
             <li>
-                <a class='{{if eq .Path "/hello"}}secondary{{end}}' href='{{.Rel "/hello"}}'>Hello</a>
+                <a class='{{if eq .Path "/hello"}}secondary{{end}}' href='{{.Ref "hello"}}'>Hello</a>
             </li>
             <li>
-                <a class='{{if .In "/features"}}secondary{{end}}' href='{{.Rel "/features/"}}'>Features</a>
+                <a class='{{if .In "/features"}}secondary{{end}}' href='{{.Ref "features"}}'>Features</a>
             </li>
         </ul>
         <ul>

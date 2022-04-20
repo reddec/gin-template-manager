@@ -66,6 +66,23 @@ func (vc *ViewContext) Path() string {
 	return vc.gctx.Request.URL.Path
 }
 
+// Ref creates relative path to alias with args if required. Requires Links to be installed.
+func (vc *ViewContext) Ref(alias string, args ...interface{}) (string, error) {
+	links, ok := vc.gctx.Get(linksKey)
+	if !ok {
+		return "", fmt.Errorf("links not installed")
+	}
+	router, ok := links.(*Links)
+	if !ok {
+		return "", fmt.Errorf("links key used for non-links object")
+	}
+	href, err := router.Path(alias, args...)
+	if err != nil {
+		return "", err
+	}
+	return vc.Rel(href), nil
+}
+
 func rootPath(path string) string {
 	if path == "" || !strings.HasPrefix(path, "/") {
 		return path
